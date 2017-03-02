@@ -1,0 +1,8 @@
+        -:    0:Source:test.c
+        -:    0:Graph:test.gcno
+        -:    0:Data:test.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:int main() {
+        1:    2:return 0;
+        -:    3:}

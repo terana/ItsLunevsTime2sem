@@ -1,0 +1,176 @@
+        -:    0:Source:list.c
+        -:    0:Graph:list.gcno
+        -:    0:Data:list.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <stdlib.h>
+        -:    2:#include <stdio.h>
+        -:    3:#include "list.h"
+        -:    4:
+        -:    5:doubleLinkedList_t *list_new()
+        -:    6:{
+       28:    7:	doubleLinkedList_t *list = malloc(sizeof(doubleLinkedList_t));
+       14:    8:	node_t             *node = malloc(sizeof(node_t));
+       14:    9:	node->previous = node;
+       14:   10:	node->next     = node;
+       14:   11:	node->value    = 0;
+       14:   12:	list->head     = node;
+       14:   13:	list->tail     = node;
+       14:   14:	return list;
+        -:   15:}
+        -:   16:
+        -:   17:void list_delete(doubleLinkedList_t *list)
+        -:   18:{
+       14:   19:	node_t *curr = list->head;
+       14:   20:	node_t *next = (list->head->next);
+      136:   21:	while (curr != list->tail)
+        -:   22:	{
+       54:   23:		free(curr);
+       54:   24:		curr = next;
+       54:   25:		next = curr->next;
+        -:   26:	}
+       14:   27:	free(curr);
+       14:   28:	free(list);
+       14:   29:}
+        -:   30:
+        -:   31:void list_initWithArray(doubleLinkedList_t *list, const data_t *array, int n)
+        -:   32:{
+        8:   33:	if (n < 1)
+        -:   34:	{
+    #####:   35:		return;
+        -:   36:	}
+       16:   37:	if ((list->head != list->tail) || (list->head == NULL))
+        -:   38:	{
+    #####:   39:		list_delete(list);
+    #####:   40:		list = list_new();
+    #####:   41:	}
+        8:   42:	list->head->value = array[0];
+        -:   43:
+        -:   44:	int    i;
+        8:   45:	node_t *prev      = list->head;
+        8:   46:	node_t *curr      = list->head;
+       80:   47:	for (i = 1; i < n; i++)
+        -:   48:	{
+       32:   49:		curr = malloc(sizeof(node_t));
+       32:   50:		curr->previous = prev;
+       32:   51:		prev->next     = curr;
+       32:   52:		curr->value    = array[i];
+       32:   53:		prev = curr;
+       32:   54:	}
+        8:   55:	list->tail           = curr;
+        8:   56:	curr->next           = list->head;
+        8:   57:	list->head->previous = list->head;
+       16:   58:}
+        -:   59:
+        -:   60:void copyFunc(data_t value, void *param)
+        -:   61:{
+       30:   62:	node_t *prev = *((node_t **) param);
+       30:   63:	node_t *curr = malloc(sizeof(node_t));
+       30:   64:	curr->previous = prev;
+       30:   65:	curr->value    = value;
+       30:   66:	if (prev)
+        -:   67:	{
+       24:   68:		prev->next = curr;
+       24:   69:	}
+       30:   70:	*((node_t **) param) = curr;
+       30:   71:}
+        -:   72:
+        -:   73:doubleLinkedList_t *list_copy(doubleLinkedList_t *list)
+        -:   74:{
+        6:   75:	doubleLinkedList_t *copy = list_new();
+        6:   76:	node_t             *node = NULL;
+        6:   77:	list_foreach(list, copyFunc, &(node));
+        -:   78:
+        6:   79:	node_t *curr = node;
+       60:   80:	while (curr->previous)
+        -:   81:	{
+       24:   82:		curr = curr->previous;
+        -:   83:	}
+        6:   84:	curr->previous = curr;
+        6:   85:	node->next     = curr;
+        6:   86:	copy->head     = curr;
+        6:   87:	copy->tail     = node;
+        6:   88:	return copy;
+        -:   89:}
+        -:   90:
+        -:   91://void list_print(doubleLinkedList_t *list)
+        -:   92://{
+        -:   93://	node_t *curr = list->head;
+        -:   94://	while (curr != list->tail)
+        -:   95://	{
+        -:   96://		printf("%d->", curr->value);
+        -:   97://		curr = curr->next;
+        -:   98://	}
+        -:   99://	printf("%d\n", curr->value);
+        -:  100://}
+        -:  101://
+        -:  102://void list_printReverce(doubleLinkedList_t *list)
+        -:  103://{
+        -:  104://	node_t *curr = list->tail;
+        -:  105://	while (curr != list->head)
+        -:  106://	{
+        -:  107://		printf("%d<-", curr->value);
+        -:  108://		curr = curr->previous;
+        -:  109://	}
+        -:  110://	printf("%d\n", curr->value);
+        -:  111://}
+        -:  112:
+        -:  113:void list_insertAfter(doubleLinkedList_t *list, node_t *node)
+        -:  114:{
+        1:  115:	node->next       = list->head;
+        1:  116:	node->previous   = list->tail;
+        1:  117:	list->tail->next = node;
+        1:  118:}
+        -:  119:
+        -:  120:void list_insertBefore(doubleLinkedList_t *list, node_t *node)
+        -:  121:{
+        1:  122:	node->previous       = node;
+        1:  123:	node->next           = list->head;
+        1:  124:	list->head->previous = node;
+        1:  125:	list->tail->next     = node;
+        1:  126:	list->head           = node;
+        1:  127:}
+        -:  128:
+        -:  129:void list_removeNode(doubleLinkedList_t *list, node_t *node)
+        -:  130:{
+        3:  131:	if (node)
+        -:  132:	{
+        3:  133:		if (node == list->head)
+        -:  134:		{
+        1:  135:			list->tail->next     = node->next;
+        1:  136:			list->head           = list->head->next;
+        1:  137:			list->head->previous = list->head;
+        1:  138:			return;
+        -:  139:		}
+        2:  140:		if (node != list->tail)
+        -:  141:		{
+        1:  142:			node->next->previous = node->previous;
+        1:  143:		}
+        -:  144:		else
+        -:  145:		{
+        1:  146:			list->tail = node->previous;
+        -:  147:		}
+        2:  148:		node->previous->next = node->next;
+        -:  149:
+        2:  150:		free(node);
+        2:  151:	}
+        3:  152:}
+        -:  153:
+        -:  154://node_t *list_pushFront(doubleLinkedList_t *list, data_t d);
+        -:  155://node_t *list_pushBack(doubleLinkedList_t *list, data_t d);
+        -:  156://
+        -:  157://data_t list_popFront(doubleLinkedList_t *list);
+        -:  158://data_t list_popBack(doubleLinkedList_t *list);
+        -:  159://data_t list_popNode(node_t *t);
+        -:  160:
+        -:  161:void list_foreach(doubleLinkedList_t *list, void (*func)(data_t d, void *param), void *param)
+        -:  162:{
+        7:  163:	node_t *node = list->head;
+        7:  164:	func(node->value, param);
+        7:  165:	node = node->next;
+       70:  166:	while (node != list->head)
+        -:  167:	{
+       28:  168:		func(node->value, param);
+       28:  169:		node = node->next;
+        -:  170:	}
+        7:  171:}
