@@ -88,28 +88,6 @@ doubleLinkedList_t *list_copy(doubleLinkedList_t *list)
 	return copy;
 }
 
-//void list_print(doubleLinkedList_t *list)
-//{
-//	node_t *curr = list->head;
-//	while (curr != list->tail)
-//	{
-//		printf("%d->", curr->value);
-//		curr = curr->next;
-//	}
-//	printf("%d\n", curr->value);
-//}
-//
-//void list_printReverce(doubleLinkedList_t *list)
-//{
-//	node_t *curr = list->tail;
-//	while (curr != list->head)
-//	{
-//		printf("%d<-", curr->value);
-//		curr = curr->previous;
-//	}
-//	printf("%d\n", curr->value);
-//}
-
 void list_insertAfter(doubleLinkedList_t *list, node_t *node)
 {
 	node->next       = list->head;

@@ -101,6 +101,7 @@ void testInsertAfter()
 	list_delete(list);
 	list_delete(copy);
 	free(str);
+	free(node);
 }
 
 void testInsertBefore()
