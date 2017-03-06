@@ -6,3 +6,6 @@
 *.gcno
 list/list/test_cov
 test
+.DS_Store
+.idea
+
