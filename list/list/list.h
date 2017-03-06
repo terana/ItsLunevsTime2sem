@@ -7,31 +7,29 @@ typedef struct node
 	struct node *previous;
 }           node_t;
 
-typedef struct doubleLinkedList
-{
-	node_t *head;
-	node_t *tail;
-}           doubleLinkedList_t;
+//struct dllist;
+typedef struct dllist dllist_t;
 
-doubleLinkedList_t *list_new();
-void list_delete(doubleLinkedList_t *list);
-void list_initWithArray(doubleLinkedList_t *list, const data_t *array, int n);
+dllist_t *list_new();
 
-doubleLinkedList_t *list_copy(doubleLinkedList_t *list);
+void list_delete(dllist_t *list);
 
-void list_print(doubleLinkedList_t *list);
-void list_printReverce(doubleLinkedList_t *list);
+void list_initWithArray(dllist_t *list, const data_t *array, int n);
 
-void list_insertAfter(doubleLinkedList_t *list, node_t *node);
-void list_insertBefore(doubleLinkedList_t *list, node_t *node);
+void list_foreach(dllist_t *list, void (*func)(node_t *curr, void *param), void *param);
 
-void list_removeNode(doubleLinkedList_t *list, node_t *node);
+dllist_t *list_copy(dllist_t *list);
 
-node_t *list_pushFront(doubleLinkedList_t *list, data_t d);
-node_t *list_pushBack(doubleLinkedList_t *list, data_t d);
+void list_insertAfter(dllist_t *list, node_t *node);
 
-data_t list_popFront(doubleLinkedList_t *list);
-data_t list_popBack(doubleLinkedList_t *list);
-data_t list_popNode(node_t *t);
+void list_insertBefore(dllist_t *list, node_t *node);
 
-void list_foreach(doubleLinkedList_t *list, void (*func)(data_t d, void *param), void *param);
+void list_removeNode(dllist_t *list, node_t *node);
+
+node_t *list_pushFront(dllist_t *list, data_t d);
+
+node_t *list_pushBack(dllist_t *list, data_t d);
+
+data_t list_popFront(dllist_t *list);
+
+data_t list_popBack(dllist_t *list);
