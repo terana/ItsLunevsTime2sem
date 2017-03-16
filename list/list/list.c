@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <assert.h>
+#include <errno.h>
 #include "list.h"
 
 /*
@@ -13,58 +13,108 @@ struct dllist
 	node_t *tail;
 };
 
+//int errorOnEmptyList(dllist_t *list)
+//{
+//	if ((list->tail == NULL) && (list->head == NULL))
+//	{
+//		errno = EINVAL;
+//		return 1;
+//	}
+//	return 0;
+//}
+//
+//int errorOnListIsNotOK(dllist_t *list)
+//{
+//}
+//
+//int errorOnNullNode(node_t *node)
+//{
+//}
+
 
 dllist_t *list_new()
 {
 	dllist_t *list = malloc(sizeof(dllist_t));
-	list->head = NULL;
-	list->tail = NULL;
+	if (list)
+	{
+		list->head = NULL;
+		list->tail = NULL;
+	}
 	return list;
 }
 
-void list_delete(dllist_t *list)
+void list_deleteAll(dllist_t *list)
 {
 	if (list == NULL)
 	{
 		return;
 	}
+	node_t *curr;
 
-	node_t *curr = list->head;
-	if (curr == NULL)
+	do
 	{
-		free(list);
-		return;
+		curr = list->head;
+		if (curr == NULL)
+		{
+			break;
+		}
+		list_removeNode(list, curr);
 	}
+	while (1);
 
-	node_t *next = (list->head->next);
-	while (curr != list->tail)
-	{
-		free(curr);
-		curr = next;
-		next = curr->next;
-	}
-	free(curr);
 	free(list);
 }
 
-void list_initWithArray(dllist_t *list, const data_t *array, int n)
+int list_initWithArray(dllist_t **listPtr, const data_t *array, int n)
 {
-	assert(list && "Invalid argument: list is NULL");
-	assert(n >= 0 && "Invalid argument: number of elements in array is less then zero");
-	assert(!((array == NULL) && (n != 0)) && "Invalid arguments: array is NULL and n is not zero");
+	if (listPtr == NULL)
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
+	dllist_t *list = *listPtr;
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
+	if (n < 0)
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
+	if ((array == NULL) && (n != 0))
+	{
+		errno = EINVAL;
+		return 1;
+	}
 
 	if (list->head != NULL)
 	{
-		list_delete(list);
+		list_deleteAll(list);
 		list = list_new();
+		if (list == NULL)
+		{
+			//errno = ENOMEM;
+			return 1;
+		}
+		*listPtr = list;
 	}
 
 	int    i;
-	node_t *prev = NULL;
-	node_t *curr = NULL;
+	node_t *prev   = NULL;
+	node_t *curr   = NULL;
 	for (i = 0; i < n; i++)
 	{
 		curr = malloc(sizeof(node_t));
+		if (curr == NULL)
+		{
+			//errno = ENOMEM;
+			return 1;
+		}
 		curr->previous = prev;
 		curr->value    = array[i];
 		if (prev == NULL)
@@ -82,29 +132,41 @@ void list_initWithArray(dllist_t *list, const data_t *array, int n)
 	{
 		curr->next = list->head;
 	}
+	return 0;
 }
 
-void list_foreach(dllist_t *list, void (*func)(node_t *curr, void *param), void *param)
+int list_foreach(dllist_t *list, void (*func)(node_t *curr, void *param, int *stop), void *param)
 {
 	if (list == NULL)
 	{
-		return;
+		errno = EINVAL;
+		return 1;
 	}
 	if ((list->head == NULL) && (list->tail == NULL))
 	{
-		return;
+		return 0;
 	}
-	assert(!((list->head == NULL) || (list->tail == NULL)) && "Invalid argument: list is not OK");
+
+	if ((list->head == NULL) || (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return 1;
+	}
 
 	node_t *node;
-	for (node = list->head; node != list->tail; node = node->next)
+	int    stop = 0;
+	for (node = list->head; (node != list->tail) && (stop == 0); node = node->next)
 	{
-		func(node, param);
+		func(node, param, &stop);
 	}
-	func(node, param);
+	if ((node == list->tail) && (stop == 0))
+	{
+		func(node, param, &stop);
+	}
+	return 0;
 }
 
-void copyFunc(node_t *node, void *param)
+void copyFunc(node_t *node, void *param, int *stop)
 {
 	node_t *prev = *((node_t **) param);
 	node_t *curr = malloc(sizeof(node_t));
@@ -119,10 +181,24 @@ void copyFunc(node_t *node, void *param)
 
 dllist_t *list_copy(dllist_t *list)
 {
-	dllist_t *copy = list_new();
-	node_t   *node = NULL;
-	list_foreach(list, copyFunc, &(node));
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
 
+	dllist_t *copy = list_new();
+	if ((list->head == NULL) && (list->tail == NULL))
+	{
+		return copy;
+	}
+
+	node_t *node = NULL;
+	int    res   = list_foreach(list, copyFunc, &(node));
+	if (res != 0)
+	{
+		return NULL;
+	}
 	node_t *curr = node;
 	while (curr->previous)
 	{
@@ -134,63 +210,133 @@ dllist_t *list_copy(dllist_t *list)
 	return copy;
 }
 
-void list_insertAfter(dllist_t *list, node_t *node)
+void insertSingleNodeIntoEmptyList(dllist_t *list, node_t *node)
 {
+	list->head     = node;
+	list->tail     = node;
+	node->previous = NULL;
+	node->next     = node;
+}
+
+int list_insertAfter(dllist_t *list, node_t *node)
+{
+	if (node == NULL || list == NULL)
+	{
+		errno = EINVAL;
+		return 1;
+	}
+	if ((list->head == NULL) && (list->tail == NULL))
+	{
+		insertSingleNodeIntoEmptyList(list, node);
+		return 0;
+	}
+	if ((list->head == NULL) || (list->tail == NULL)) //List is not OK
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
 	node->next       = list->head;
 	node->previous   = list->tail;
 	list->tail->next = node;
 	list->tail       = node;
+	return 0;
 }
 
-void list_insertBefore(dllist_t *list, node_t *node)
+int list_insertBefore(dllist_t *list, node_t *node)
 {
+	if (node == NULL || list == NULL)
+	{
+		errno = EINVAL;
+		return 1;
+	}
+	if ((list->head == NULL) && (list->tail == NULL))
+	{
+		insertSingleNodeIntoEmptyList(list, node);
+		return 0;
+	}
+	if ((list->head == NULL) || (list->tail == NULL)) //List is not OK
+	{
+		errno = EINVAL;
+		return 1;
+	}
 	node->previous       = NULL;
 	node->next           = list->head;
 	list->head->previous = node;
 	list->tail->next     = node;
 	list->head           = node;
+	return 0;
 }
 
-void list_removeNode(dllist_t *list, node_t *node)
+int list_removeNode(dllist_t *list, node_t *node)
 {
-	if (node)
+	if (node == NULL || list == NULL)
 	{
-		if (node == list->head)
-		{
-			list->tail->next     = node->next;
-			list->head           = list->head->next;
-			list->head->previous = NULL;
-			free(node);
-			return;
-		}
-		if (node == list->tail)
-		{
-			list->tail = node->previous;
-		}
-		else
-		{
-			node->next->previous = node->previous;
-		}
-		node->previous->next = node->next;
-
-		free(node);
+		errno = EINVAL;
+		return 1;
 	}
+
+	if ((list->head == NULL) && (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
+	if ((node == list->head) && (node == list->tail))
+	{
+		free(node);
+		list->head = NULL;
+		list->tail = NULL;
+		return 0;
+	}
+	if (node == list->head)
+	{
+		list->tail->next     = node->next;
+		list->head           = list->head->next;
+		list->head->previous = NULL;
+		free(node);
+		return 0;
+	}
+	if (node == list->tail)
+	{
+		list->tail = node->previous;
+	}
+	else
+	{
+		node->next->previous = node->previous;
+	}
+	node->previous->next = node->next;
+
+	free(node);
+
+	return 0;
 }
 
 node_t *list_pushFront(dllist_t *list, data_t value)
 {
-	assert(list);
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
 
 	node_t *node = malloc(sizeof(node_t));
+	if (node == NULL)
+	{
+		//errno = ENOMEM
+		return NULL;
+	}
 	node->value = value;
 	if ((list->head == NULL) && (list->tail == NULL))
 	{
-		list->head     = list->tail = node;
-		node->next     = node;
-		node->previous = NULL;
+		insertSingleNodeIntoEmptyList(list, node);
 		return node;
 	}
-	assert(!((list->head == NULL) || (list->tail == NULL)) && "Invalid argument: list is not OK");
+	if ((list->head == NULL) || (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return NULL;
+	}
 
 	node->previous = NULL;
 	node->next     = list->head;
@@ -203,18 +349,29 @@ node_t *list_pushFront(dllist_t *list, data_t value)
 
 node_t *list_pushBack(dllist_t *list, data_t value)
 {
-	assert(list);
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
 
 	node_t *node = malloc(sizeof(node_t));
+	if (node == NULL)
+	{
+		//errno = ENOMEM
+		return NULL;
+	}
 	node->value = value;
 	if ((list->head == NULL) && (list->tail == NULL))
 	{
-		list->head     = list->tail = node;
-		node->next     = node;
-		node->previous = NULL;
+		insertSingleNodeIntoEmptyList(list, node);
 		return node;
 	}
-	assert(!((list->head == NULL) || (list->tail == NULL)) && "Invalid argument: list is not OK");
+	if ((list->head == NULL) || (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return NULL;
+	}
 
 	node->next       = list->head;
 	node->previous   = list->tail;
@@ -226,9 +383,16 @@ node_t *list_pushBack(dllist_t *list, data_t value)
 
 data_t list_popFront(dllist_t *list)
 {
-	assert(list && "Ivalid argument: list is NULL");
-	assert(!((list->head == NULL) && (list->tail == NULL)) && "Ivalid argument: list is empty");
-	assert(!((list->head == NULL) || (list->tail == NULL)) && "Ivalid argument: list is not OK");
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+	if ((list->head == NULL) || (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return -1;
+	}
 
 	node_t *node = list->head;
 	data_t value = list->head->value;
@@ -243,15 +407,22 @@ data_t list_popFront(dllist_t *list)
 
 data_t list_popBack(dllist_t *list)
 {
-	assert(list && "Ivalid argument: list is NULL");
-	assert(!((list->head == NULL) && (list->tail == NULL)) && "Ivalid argument: list is empty");
-	assert(!((list->head == NULL) || (list->tail == NULL)) && "Ivalid argument: list is not OK");
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+	if ((list->head == NULL) || (list->tail == NULL))
+	{
+		errno = EINVAL;
+		return -1;
+	}
 
 	node_t *node = list->tail;
 	data_t value = list->tail->value;
 
-	list->tail          = list->tail->previous;
-	list->tail->next     = list->head;
+	list->tail       = list->tail->previous;
+	list->tail->next = list->head;
 
 	free(node);
 	return value;
