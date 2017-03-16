@@ -9,6 +9,11 @@ struct dllist
 	node_t *head;
 	node_t *tail;
 };
+struct dllist_iterator
+{
+	dllist_t *list;
+	node_t   *curr;
+};
 
 void crashIfFalse(int condition, const char *description)
 {
@@ -82,7 +87,6 @@ dllist_t *setUp()
 void testListNew()
 {
 	dllist_t *list = list_new();
-	assert(list && "Memory error occured");
 
 	crashIfFalse(list_isOK(list), "testListNew: list is notOK\n");
 	crashIfFalse(list->head == NULL, "testListNew: list is not empty\n");
@@ -671,6 +675,40 @@ void testRemoveNode_SingularList()
 	list_deleteAll(list);
 }
 
+void testRemoveNode_EmptyList()
+{
+	dllist_t *list = list_new();
+	assert(list && "Memory error occurred");
+	node_t *node = malloc(sizeof(node_t));
+	node->value = 6;
+
+	int res = list_removeNode(list, node);
+	crashIfFalse(res != 0, "list_removeNode empty list: error is not detected\n");
+	crashIfFalse(errno == EINVAL, "list_removeNode empty list: errno is not set\n");
+
+	list_deleteAll(list);
+	free(node);
+}
+
+void testRemoveNode_InvalidList()
+{
+	dllist_t *list      = setUp();
+	node_t   *list_head = list->head;
+	list->head = NULL;
+	node_t *node = malloc(sizeof(node_t));
+	node->value = 6;
+
+	int res = list_removeNode(list, node);
+	crashIfFalse(res != 0, "list_removeNode invalid list: error isnot detected\n");
+	crashIfFalse(errno == EINVAL, "list_removeNode invalid list: errno is not set\n");
+
+	list->head = list_head;
+	list_deleteAll(list);
+	free(node);
+}
+
+
+//node_t *list_pushFront(dllist_t *list, data_t value)
 
 void testPushFront()
 {
@@ -680,6 +718,7 @@ void testPushFront()
 	data_t d     = 6;
 	node_t *node = list_pushFront(list, d);
 	crashIfFalse(list_isOK(list), "list_pushFront: list is not OK\n");
+	crashIfFalse(node != NULL, "list_pushFront: node is NLL");
 
 	char *str = malloc(100 * sizeof(char));
 	sprintf(str, "list_pushFront: want first value %d have %d\n", d, list->head->value);
@@ -703,14 +742,15 @@ void testPushFront()
 	free(str);
 }
 
-void testEmptyListPushFront()
+void testListPushFront_EmptyList()
 {
 	dllist_t *list = list_new();
 	assert(list && "Memory error occured");
 
 	data_t d     = 6;
 	node_t *node = list_pushFront(list, d);
-	crashIfFalse(list_isOK(list), "empty list_pushFront: list is not OK\n");
+	crashIfFalse(list_isOK(list), "list_pushFront empty: list is not OK\n");
+	crashIfFalse(node != NULL, "list_pushFront empty list: node is NULL");
 
 	char *str = malloc(100 * sizeof(char));
 	sprintf(str, "empty list_pushFront: want first value %d have %d\n", d, list->head->value);
@@ -727,6 +767,34 @@ void testEmptyListPushFront()
 	list_deleteAll(list);
 	free(str);
 }
+
+void testListPushFront_NullList()
+{
+	dllist_t *list = NULL;
+	data_t   value = 6;
+
+	node_t *node = list_pushFront(list, value);
+	crashIfFalse(node == NULL, "list_pushFront NULL list: error isnot detected\n");
+	crashIfFalse(errno == EINVAL, "list_pushFront NULL list: errno is not set\n");
+}
+
+void testListPushFront_InvalidList()
+{
+	dllist_t *list      = setUp();
+	node_t   *list_head = list->head;
+	list->head = NULL;
+	data_t value = 6;
+
+	node_t *node = list_pushFront(list, value);
+	crashIfFalse(node == NULL, "list_pushFront invalid list: error isnot detected\n");
+	crashIfFalse(errno == EINVAL, "list_pushFront invalid list: errno is not set\n");
+
+	list->head = list_head;
+	list_deleteAll(list);
+}
+
+
+//node_t *list_pushBack(dllist_t *list, data_t value)
 
 void testPushBack()
 {
@@ -759,7 +827,7 @@ void testPushBack()
 	free(str);
 }
 
-void testEmptyListPushBack()
+void testListPushBack_EmptyList()
 {
 	dllist_t *list = list_new();
 	assert(list && "Memory error occured");
@@ -784,14 +852,44 @@ void testEmptyListPushBack()
 	free(str);
 }
 
+void testListPushBack_NullList()
+{
+	dllist_t *list = NULL;
+	data_t   value = 6;
+
+	node_t *node = list_pushBack(list, value);
+	crashIfFalse(node == NULL, "list_pushBack NULL list: error isnot detected\n");
+	crashIfFalse(errno == EINVAL, "list_pushBack NULL list: errno is not set\n");
+}
+
+void testListPushBack_InvalidList()
+{
+	dllist_t *list      = setUp();
+	node_t   *list_head = list->head;
+	list->head = NULL;
+	data_t value = 6;
+
+	node_t *node = list_pushBack(list, value);
+	crashIfFalse(node == NULL, "list_pushBack Invalid list: error isnot detected\n");
+	crashIfFalse(errno == EINVAL, "list_pushBack Ivalid list: errno is not set\n");
+
+	list->head = list_head;
+	list_deleteAll(list);
+}
+
+
+//data_t list_popFront(dllist_t *list)
+
 void testPopFront()
 {
 	dllist_t *list     = setUp();
 	dllist_t *copy     = list_copy(list);
 	data_t   wantValue = list->head->value;
 
+	errno              = 0;
 	data_t haveValue = list_popFront(list);
 	crashIfFalse(list_isOK(list), "list_popFront: list is not OK\n");
+	crashIfFalse(errno == 0, "list_popFront: error occurred\n");
 
 	char *str = malloc(100 * sizeof(char));
 	sprintf(str, "list_popFront: wantValue = %d, haveValue = %d\n", wantValue, haveValue);
@@ -811,14 +909,54 @@ void testPopFront()
 	free(str);
 }
 
+void testPopFront_NullList()
+{
+	dllist_t *list = NULL;
+
+	errno          = 0;
+	list_popFront(list);
+	crashIfFalse(errno != 0, "list_popFront NULL list: errno is not set\n");
+}
+
+void testPopFront_InvalidList()
+{
+	dllist_t *list      = setUp();
+	node_t   *list_head = list->head;
+	list->head = NULL;
+
+	errno               = 0;
+	list_popFront(list);
+	crashIfFalse(errno != 0, "list_popFront invalid list: errno is not set\n");
+
+	list->head = list_head;
+	list_deleteAll(list);
+}
+
+void testPopFront_EmptyList()
+{
+	dllist_t *list = list_new();
+	assert(list && "Memory error occured");
+
+	errno          = 0;
+	list_popFront(list);
+	crashIfFalse(errno != 0, "list_popFront invalid list: errno is not set\n");
+
+	list_deleteAll(list);
+}
+
+
+//data_t list_popBack(dllist_t *list)
+
 void testPopBack()
 {
 	dllist_t *list     = setUp();
 	dllist_t *copy     = list_copy(list);
 	data_t   wantValue = list->tail->value;
 
+	errno              = 0;
 	data_t haveValue = list_popBack(list);
 	crashIfFalse(list_isOK(list), "list_popBack: list is not OK\n");
+	crashIfFalse(errno == 0, "list_popBack: error occurred\n");
 
 	char *str = malloc(100 * sizeof(char));
 	sprintf(str, "list_popBackt: wantValue = %d, haveValue = %d\n", wantValue, haveValue);
@@ -838,6 +976,291 @@ void testPopBack()
 	list_deleteAll(list);
 	list_deleteAll(copy);
 	free(str);
+}
+
+void testPopBack_NullList()
+{
+	dllist_t *list = NULL;
+
+	errno          = 0;
+	list_popBack(list);
+	crashIfFalse(errno != 0, "list_popBack NULL list: errno is not set\n");
+}
+
+void testPopBack_InvalidList()
+{
+	dllist_t *list      = setUp();
+	node_t   *list_head = list->head;
+	list->head = NULL;
+
+	errno               = 0;
+	list_popBack(list);
+	crashIfFalse(errno != 0, "list_popBack invalid list: errno is not set\n");
+
+	list->head = list_head;
+	list_deleteAll(list);
+}
+
+void testPopBack_EmptyList()
+{
+	dllist_t *list = list_new();
+	assert(list && "Memory error occured");
+
+	errno          = 0;
+	list_popBack(list);
+	crashIfFalse(errno != 0, "list_popBack invalid list: errno is not set\n");
+
+	list_deleteAll(list);
+}
+
+
+/*
+ * returns 1 if iterator is OK, 0 if iterator is not OK
+ */
+int iteratorIsOK(dllist_iterator_t *iterator)
+{
+	if (iterator == NULL)
+	{
+		return 0;
+	}
+	if (iterator->list == NULL || iterator->curr == NULL)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+
+void testIteratorNew()
+{
+	dllist_t          *list     = setUp();
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_new: iterator is not OK\n");
+
+	free(iterator);
+	list_deleteAll(list);
+}
+
+void testIteratorNew_EmptyList()
+{
+	dllist_t *list = list_new();
+	assert(list && "Errorallocating memory occurred");
+	errno          = 0;
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+	crashIfFalse(iterator == NULL, "dllist_iterator_new empty list: error is not detected\n");
+
+	list_deleteAll(list);
+}
+
+void testIteratorNew_NullList()
+{
+	dllist_t *list = NULL;
+	errno          = 0;
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+	crashIfFalse(iterator == NULL, "dllist_iterator_new null list: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_new null list: errno is not set\n");
+}
+
+void testIteratorGet()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+
+	errno          = 0;
+	node_t *have = dllist_iterator_get(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_get: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_get: error occurred\n");
+
+	node_t *want = list->head;
+	crashIfFalse(have == want, "dllist_iterator_get: got invalidnode\n");
+
+	free(iterator);
+	list_deleteAll(list);
+}
+
+void testIteratorGet_NullIterator()
+{
+	dllist_iterator_t *iterator = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_get(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_get null iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_get null iterator: errno isnot set\n");
+}
+
+void testIteratorGet_InvalidIterator()
+{
+	dllist_iterator_t *iterator = malloc(sizeof(dllist_iterator_t));
+	assert(iterator && "Memory allocation error occurred");
+	iterator->list = NULL;
+	iterator->curr = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_get(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_get invalid iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_get invalid iterator: errno isnot set\n");
+}
+
+void testIteratorNext()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+
+	errno          = 0;
+	node_t *have = dllist_iterator_next(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_next: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_next: error occurred\n");
+
+	node_t *want = list->head->next;
+	crashIfFalse(have == want, "dllist_iterator_next: got invalid node\n");
+	crashIfFalse(iterator->curr == want, "dllist_iterator_next: current oterator node is invalid\n");
+
+	free(iterator);
+	list_deleteAll(list);
+}
+
+void testIteratorNext_NullIterator()
+{
+	dllist_iterator_t *iterator = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_next(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_next null iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_next null iterator: errno isnot set\n");
+}
+
+void testIteratorNext_InvalidIterator()
+{
+	dllist_iterator_t *iterator = malloc(sizeof(dllist_iterator_t));
+	assert(iterator && "Memory allocation error occurred");
+	iterator->list = NULL;
+	iterator->curr = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_next(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_next invalid iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_next invalid iterator: errno isnot set\n");
+}
+
+void testIteratorPrevious()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+	node_t            *want     = iterator->curr;
+	iterator->curr = iterator->curr->next;
+
+	errno          = 0;
+	node_t *have = dllist_iterator_previous(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_previous: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_previous: error occurred\n");
+
+	crashIfFalse(have == want, "dllist_iterator_previous: got invalid node\n");
+	crashIfFalse(iterator->curr == want, "dllist_iterator_previous: current iterator node is invalid\n");
+
+	free(iterator);
+	list_deleteAll(list);
+}
+
+void testIteratorPrevious_FirstNode()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+
+	errno          = 0;
+	node_t *have = dllist_iterator_previous(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_previous first node: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_previous: error occurred\n");
+
+	crashIfFalse(have == NULL, "dllist_iterator_previous first node: got invalid node\n");
+	crashIfFalse(iterator->curr == list->head, "dllist_iterator_previous first node: current iterator node is invalid\n");
+
+	free(iterator);
+	list_deleteAll(list);
+}
+
+void testIteratorPrevious_NullIterator()
+{
+	dllist_iterator_t *iterator = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_previous(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_previous null iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_previous null iterator: errno isnot set\n");
+}
+
+void testIteratorPrevious_InvalidIterator()
+{
+	dllist_iterator_t *iterator = malloc(sizeof(dllist_iterator_t));
+	assert(iterator && "Memory allocation error occurred");
+	iterator->list = NULL;
+	iterator->curr = NULL;
+
+	errno                       = 0;
+	node_t *have = dllist_iterator_previous(iterator);
+	crashIfFalse(have == NULL, "dllist_iterator_previous invalid iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_previous invalid iterator: errno isnot set\n");
+}
+
+
+void testIteratorIsLast()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+	iterator->curr = list->tail;
+
+	errno          = 0;
+	int res = dllist_itertor_isLast(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_isLast: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_isLast: error occurred\n");
+	crashIfFalse(res == 1, "dllist_iterator_isLast: result is not correct\n");
+
+	list_deleteAll(list);
+	free(iterator);
+}
+
+
+void testIteratorIsLast_isNotLast()
+{
+	dllist_t *list = setUp();
+	assert(list && "Memory allocation error occurred");
+	dllist_iterator_t *iterator = dllist_iterator_new(list);
+
+	errno          = 0;
+	int res = dllist_itertor_isLast(iterator);
+	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_isLast: iterator is not OK\n");
+	crashIfFalse(errno == 0, "dllist_iterator_isLast: error occurred\n");
+	crashIfFalse(res == 0, "dllist_iterator_isLast: result is not correct\n");
+
+	list_deleteAll(list);
+	free(iterator);
+}
+
+void testIteratorIsLast_NullIterator()
+{
+	dllist_iterator_t *iterator = NULL;
+
+	errno                       = 0;
+	int res = dllist_itertor_isLast(iterator);
+	crashIfFalse(res == -1, "dllist_iterator_isLast null iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_isLast null iterator: errno isnot set\n");
+}
+
+void testIteratorIsLast_InvalidIterator()
+{
+	dllist_iterator_t *iterator = malloc(sizeof(dllist_iterator_t));
+	assert(iterator && "Memory allocation error occurred");
+	iterator->list = NULL;
+	iterator->curr = NULL;
+
+	errno                       = 0;
+	int res = dllist_itertor_isLast(iterator);
+	crashIfFalse(res == -1, "dllist_iterator_isLast invalid iterator: error is not detected\n");
+	crashIfFalse(errno != 0, "dllist_iterator_isLast invalid iterator: errno isnot set\n");
 }
 
 int main()
@@ -878,12 +1301,54 @@ int main()
 	testRemoveNode_Head();
 	testRemoveNode_Middle();
 	testRemoveNode_Tail();
+	testRemoveNode_SingularList();
+	testRemoveNode_EmptyList();
+	testRemoveNode_InvalidList();
+	testRemoveNode_NullList();
+	testRemoveNode_NullNode();
+
 	testPushFront();
-	testEmptyListPushFront();
+	testListPushFront_EmptyList();
+	testListPushFront_NullList();
+	testListPushFront_InvalidList();
+
 	testPushBack();
-	testEmptyListPushBack();
+	testListPushBack_EmptyList();
+	testListPushBack_NullList();
+	testListPushBack_InvalidList();
+
 	testPopFront();
+	testPopFront_EmptyList();
+	testPopFront_InvalidList();
+	testPopFront_NullList();
+
 	testPopBack();
-	printf("Everithing is OK\n");
+	testPopBack_EmptyList();
+	testPopBack_InvalidList();
+	testPopBack_NullList();
+
+	testIteratorNew();
+	testIteratorNew_EmptyList();
+	testIteratorNew_NullList();
+
+	testIteratorGet();
+	testIteratorGet_InvalidIterator();
+	testIteratorGet_NullIterator();
+
+	testIteratorNext();
+	testIteratorNext_InvalidIterator();
+	testIteratorNext_NullIterator();
+
+	testIteratorPrevious();
+	testIteratorPrevious_InvalidIterator();
+	testIteratorPrevious_NullIterator();
+	testIteratorPrevious_FirstNode();
+
+	testIteratorIsLast();
+	testIteratorIsLast_isNotLast();
+	testIteratorIsLast_NullIterator();
+	testIteratorIsLast_InvalidIterator();
+
+	printf("Everything is OK\n");
 	return 0;
 }

@@ -7,30 +7,80 @@
     list->tail->next == list->head;
  */
 
+#define RETURN_ERROR_ON_INVALID_ITERATOR(return_value)    {if (iterator == NULL){\
+                                                errno = EINVAL;\
+                                                return return_value;\
+                                            }\
+                                            if (iterator->list == NULL || iterator->curr == NULL){\
+                                                errno = EINVAL;\
+                                                return return_value;\
+                                            }}
+
 struct dllist
 {
 	node_t *head;
 	node_t *tail;
 };
 
-//int errorOnEmptyList(dllist_t *list)
-//{
-//	if ((list->tail == NULL) && (list->head == NULL))
-//	{
-//		errno = EINVAL;
-//		return 1;
-//	}
-//	return 0;
-//}
-//
-//int errorOnListIsNotOK(dllist_t *list)
-//{
-//}
-//
-//int errorOnNullNode(node_t *node)
-//{
-//}
+struct dllist_iterator
+{
+	dllist_t *list;
+	node_t   *curr;
+};
 
+dllist_iterator_t *dllist_iterator_new(dllist_t *list)
+{
+	if (list == NULL)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+	if (list->head == NULL)
+	{
+		return NULL;
+	}
+
+	dllist_iterator_t *iterator = malloc(sizeof(dllist_iterator_t));
+	if (iterator != NULL)
+	{
+		iterator->list = list;
+		iterator->curr = list->head;
+	}
+	return iterator;
+}
+
+node_t *dllist_iterator_get(dllist_iterator_t *iterator)
+{
+	RETURN_ERROR_ON_INVALID_ITERATOR(NULL)
+
+	return iterator->curr;
+}
+
+node_t *dllist_iterator_next(dllist_iterator_t *iterator)
+{
+	RETURN_ERROR_ON_INVALID_ITERATOR(NULL)
+	return iterator->curr = iterator->curr->next;
+}
+
+node_t *dllist_iterator_previous(dllist_iterator_t *iterator)
+{
+	RETURN_ERROR_ON_INVALID_ITERATOR(NULL)
+	if (iterator->curr == iterator->list->head)
+	{
+		return NULL;
+	}
+	return iterator->curr = iterator->curr->previous;
+}
+
+int dllist_itertor_isLast(dllist_iterator_t *iterator)
+{
+	RETURN_ERROR_ON_INVALID_ITERATOR(-1)
+	if (iterator->curr == iterator->list->tail)
+	{
+		return 1;
+	}
+	return 0;
+}
 
 dllist_t *list_new()
 {
@@ -276,7 +326,13 @@ int list_removeNode(dllist_t *list, node_t *node)
 		return 1;
 	}
 
-	if ((list->head == NULL) && (list->tail == NULL))
+	if ((list->head == NULL) && (list->tail == NULL))// list is empty
+	{
+		errno = EINVAL;
+		return 1;
+	}
+
+	if ((list->head == NULL) || (list->tail == NULL)) // list isnot OK
 	{
 		errno = EINVAL;
 		return 1;
@@ -388,7 +444,7 @@ data_t list_popFront(dllist_t *list)
 		errno = EINVAL;
 		return -1;
 	}
-	if ((list->head == NULL) || (list->tail == NULL))
+	if ((list->head == NULL) || (list->tail == NULL)) // list is not OK or empty
 	{
 		errno = EINVAL;
 		return -1;

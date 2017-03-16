@@ -9,10 +9,38 @@ typedef struct node
 
 typedef struct dllist dllist_t;
 
-typedef struct iterator
-{
+typedef struct dllist_iterator dllist_iterator_t;
 
-} list_iterator_t;
+/*
+ * Returns new iterator on list with current value equal to the first node of the list.
+ * If error occurs returns NULL and changes errno.
+ */
+dllist_iterator_t *dllist_iterator_new(dllist_t *list);
+
+
+/*
+ * Returns current node of iterator.
+ * If error occurs returns NULL and changes errno.
+ */
+node_t *dllist_iterator_get(dllist_iterator_t *iterator);
+
+/*
+ * Returns next node of iterator. Sets the iterator current node to next node.
+ * If error occurs returns NULL and changes errno.
+ */
+node_t * dllist_iterator_next(dllist_iterator_t *iterator);
+
+/*
+ * Returns next node of iterator. Sets the iterator current node to next node.
+ * If current value is the first returns NULL and doesn't change the iterator.
+ * If error occurs returns NULL and changes errno.
+ */
+node_t * dllist_iterator_previous(dllist_iterator_t *iterator);
+
+/*
+ * Returns 0 if current value of iterator is not last, 1 if it is last, -1 if error occurs.
+ */
+int dllist_itertor_isLast(dllist_iterator_t *iterator);
 
 /*
  * Returns pointer on new empty list.
