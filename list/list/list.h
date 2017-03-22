@@ -1,3 +1,5 @@
+int testingMalloc;
+
 typedef int data_t;
 
 typedef struct node
@@ -16,7 +18,6 @@ typedef struct dllist_iterator dllist_iterator_t;
  * If error occurs returns NULL and changes errno.
  */
 dllist_iterator_t *dllist_iterator_new(dllist_t *list);
-
 
 /*
  * Returns current node of iterator.
@@ -48,16 +49,27 @@ int dllist_itertor_isLast(dllist_iterator_t *iterator);
  */
 dllist_t *list_new();
 
-void list_deleteAll(dllist_t *list);
+int list_deleteAll(dllist_t *list);
+
+/*
+ * returns 1 if list is OK, 0 if list is not OK
+ */
+int list_isOK(dllist_t *list);
 
 /*
  * Initiates list with array. If list is not empty, the pointer may change.
  * Returns 0 if everything is OK, returns 1 if error occures and changes errno.
  */
-int list_initWithArray(dllist_t **list, const data_t *array, int n);
+int list_initWithArray(dllist_t *list, const data_t *array, int n);
 
-int list_foreach(dllist_t *list, void (*func)(node_t *curr, void *param, int *stop), void *param);
+/*
+* Returns 0 if everything is OK, returns 1 if it stops before list tail, returns-1 if error occures and changes errno.
+*/
+int list_foreach(dllist_t *list, int (*func)(node_t *curr, void *param), void *param);
 
+/*
+* Returns copy oflist if everything is OK, returns NULL if error occures and changes errno.
+*/
 dllist_t *list_copy(dllist_t *list);
 
 /*

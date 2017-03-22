@@ -1,20 +1,11 @@
 #!/bin/bash
 
-ask_what_to_do () {
-	echo "Continue? y/n"
-	read ans
-	if [[ $ans == "n" ]]
-	then
-		exit 0
-	fi
-}
-
 echo "make clean ... "
 make clean
 
 if [[ $? != 0 ]]
 then 
-	ask_what_to_do
+	exit $?
 fi
 
 echo "make ..."
@@ -22,7 +13,7 @@ make
 
 if  [[ $? != 0 ]] 
 then	
-	ask_what_to_do
+	exit $?
 fi
 
 echo "executing test ..."
@@ -30,7 +21,7 @@ echo "executing test ..."
 
 if [[ $? != 0 ]]
 then
-	ask_what_to_do
+	exit $?
 fi
 
 echo "checking coverage ..."
@@ -38,5 +29,7 @@ gcov list.c
 
 if [[ $? != 0 ]]
 then
-        ask_what_to_do
+        exit $?
 fi
+
+/usr/local/bin/gcovr -r ./ -p
