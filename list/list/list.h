@@ -86,7 +86,7 @@ int list_insertBefore(dllist_t *list, node_t *node);
 
 /*
  * Removes node from list.
- * Returns 0 if everything is OK, returns 1 if error occures and changes errno.
+ * Returns the value of deleted node if everything is OK, returns -1 if error occures and changes errno.
  */
 int list_removeNode(dllist_t *list, node_t *node);
 
@@ -101,15 +101,3 @@ node_t *list_pushFront(dllist_t *list, data_t val);
  *  Returns pointer on created node if everything is OK, returns NULL if error occures and changes errno.
  */
 node_t *list_pushBack(dllist_t *list, data_t val);
-
-/*
- * Removes the first node in the list.
- * Returns value of the first node  if everything is OK, returns -1 if error occures and changes errno.
- */
-data_t list_popFront(dllist_t *list);
-
-/*
- * Removes the last node in the list.
- * Returns value of the last node  if everything is OK, returns -1 if error occures and changes errno.
- */
-data_t list_popBack(dllist_t *list);

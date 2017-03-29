@@ -30,7 +30,8 @@ dllist_t *setUp()
 	dllist_t *list = list_new();
 	assert(list && "Memory error occured");
 	data_t array[5] = { 1, 2, 3, 4, 5 };
-	list_initWithArray(list, array, 5);
+	int res = list_initWithArray(list, array, 5);
+	assert(res== 0 &&"error occurred initing array");
 	return list;
 }
 
@@ -277,7 +278,7 @@ void testForeach_EmptyList()
 
 void testForeach_InvalidList()
 {
-	dllist_t *list      = setUp();
+	dllist_t *list = setUp();
 	list->head->previous = list->head;
 
 	int res = list_foreach(list, func, NULL);
@@ -341,7 +342,7 @@ void testCopy_NullList()
 
 void testCopy_InvalidList()
 {
-	dllist_t *list      = setUp();
+	dllist_t *list = setUp();
 	list->tail->next = NULL;
 
 	dllist_t *res = list_copy(list);
@@ -444,7 +445,7 @@ void testInsertAfter_EmptyList()
 
 void testInsertAfter_InvalidList()
 {
-	dllist_t *list      = setUp();
+	dllist_t *list           = setUp();
 	node_t   *list_head_next = list->head->next;
 	list->head->next = NULL;
 	node_t *node = malloc(sizeof(node_t));
@@ -538,7 +539,7 @@ void testInsertBefore_EmptyList()
 
 void testInsertBefore_InvalidList()
 {
-	dllist_t *list      = setUp();
+	dllist_t *list               = setUp();
 	node_t   *list_tail_previous = list->tail->previous;
 	list->tail->previous = NULL;
 	node_t *node = malloc(sizeof(node_t));
@@ -561,7 +562,7 @@ void testRemoveNode_Head()
 	dllist_t *list = setUp();
 	dllist_t *copy = list_copy(list);
 	node_t   *node = list->head;
-	data_t value = node->value;
+	data_t   value = node->value;
 
 	int res = list_removeNode(list, node);
 	crashIfFalse(list_isOK(list), "list_removeNode head: list is not OK\n");
@@ -588,7 +589,7 @@ void testRemoveNode_Tail()
 	dllist_t *list = setUp();
 	dllist_t *copy = list_copy(list);
 	node_t   *node = list->tail;
-	data_t value = node->value;
+	data_t   value = node->value;
 
 	int res = list_removeNode(list, node);
 	crashIfFalse(list_isOK(list), "list_removeNode tail: list is not OK\n");
@@ -616,7 +617,7 @@ void testRemoveNode_Middle()
 	dllist_t *list = setUp();
 	dllist_t *copy = list_copy(list);
 	node_t   *node = list->head->next;
-	data_t value = node->value;
+	data_t   value = node->value;
 
 	int res = list_removeNode(list, node);
 	crashIfFalse(list_isOK(list), "list_removeNode middle: list is not OK\n");
@@ -913,143 +914,6 @@ void testPushBack_InvalidMalloc()
 	list_deleteAll(list);
 }
 
-
-//data_t list_popFront(dllist_t *list)
-
-//void testPopFront()
-//{
-//	dllist_t *list     = setUp();
-//	dllist_t *copy     = list_copy(list);
-//	data_t   wantValue = list->head->value;
-//
-//	errno              = 0;
-//	data_t haveValue = list_popFront(list);
-//	crashIfFalse(list_isOK(list), "list_popFront: list is not OK\n");
-//	crashIfFalse(errno == 0, "list_popFront: error occurred\n");
-//
-//	char *str = malloc(100 * sizeof(char));
-//	sprintf(str, "list_popFront: wantValue = %d, haveValue = %d\n", wantValue, haveValue);
-//	crashIfFalse(wantValue == haveValue, str);
-//
-//	node_t *want = copy->head->next;
-//	node_t *have = list->head;
-//
-//	for (; want != copy->head; want = want->next, have = have->next)
-//	{
-//		sprintf(str, "list_popFront: want->value = %d, have->value = %d\n", want->value, have->value);
-//		crashIfFalse(want->value == have->value, str);
-//	}
-//
-//	list_deleteAll(list);
-//	list_deleteAll(copy);
-//	free(str);
-//}
-//
-//void testPopFront_NullList()
-//{
-//	dllist_t *list = NULL;
-//
-//	errno          = 0;
-//	list_popFront(list);
-//	crashIfFalse(errno != 0, "list_popFront NULL list: errno is not set\n");
-//}
-//
-//void testPopFront_InvalidList()
-//{
-//	dllist_t *list      = setUp();
-//	node_t   *list_head = list->head;
-//	list->head = NULL;
-//
-//	errno               = 0;
-//	list_popFront(list);
-//	crashIfFalse(errno != 0, "list_popFront invalid list: errno is not set\n");
-//
-//	list->head = list_head;
-//	list_deleteAll(list);
-//}
-//
-//void testPopFront_EmptyList()
-//{
-//	dllist_t *list = list_new();
-//	assert(list && "Memory error occured");
-//
-//	errno          = 0;
-//	list_popFront(list);
-//	crashIfFalse(errno != 0, "list_popFront invalid list: errno is not set\n");
-//
-//	list_deleteAll(list);
-//}
-//
-//
-////data_t list_popBack(dllist_t *list)
-//
-//void testPopBack()
-//{
-//	dllist_t *list     = setUp();
-//	dllist_t *copy     = list_copy(list);
-//	data_t   wantValue = list->tail->value;
-//
-//	errno              = 0;
-//	data_t haveValue = list_popBack(list);
-//	crashIfFalse(list_isOK(list), "list_popBack: list is not OK\n");
-//	crashIfFalse(errno == 0, "list_popBack: error occurred\n");
-//
-//	char *str = malloc(100 * sizeof(char));
-//	sprintf(str, "list_popBackt: wantValue = %d, haveValue = %d\n", wantValue, haveValue);
-//	crashIfFalse(wantValue == haveValue, str);
-//
-//	node_t *want = copy->head;
-//	node_t *have = list->head;
-//
-//	for (; want != copy->tail; want = want->next, have = have->next)
-//	{
-//		sprintf(str, "list_popBack: want->value = %d, have->value = %d\n", want->value, have->value);
-//		crashIfFalse(want->value == have->value, str);
-//	}
-//
-//	crashIfFalse(have == list->head, "list_popBack: have extra value");
-//
-//	list_deleteAll(list);
-//	list_deleteAll(copy);
-//	free(str);
-//}
-//
-//void testPopBack_NullList()
-//{
-//	dllist_t *list = NULL;
-//
-//	errno          = 0;
-//	list_popBack(list);
-//	crashIfFalse(errno != 0, "list_popBack NULL list: errno is not set\n");
-//}
-//
-//void testPopBack_InvalidList()
-//{
-//	dllist_t *list      = setUp();
-//	node_t   *list_head = list->head;
-//	list->head = NULL;
-//
-//	errno               = 0;
-//	list_popBack(list);
-//	crashIfFalse(errno != 0, "list_popBack invalid list: errno is not set\n");
-//
-//	list->head = list_head;
-//	list_deleteAll(list);
-//}
-//
-//void testPopBack_EmptyList()
-//{
-//	dllist_t *list = list_new();
-//	assert(list && "Memory error occured");
-//
-//	errno          = 0;
-//	list_popBack(list);
-//	crashIfFalse(errno != 0, "list_popBack invalid list: errno is not set\n");
-//
-//	list_deleteAll(list);
-//}
-//
-
 /*
  * returns 1 if iterator is OK, 0 if iterator is not OK
  */
@@ -1081,12 +945,13 @@ void testIteratorNew()
 void testIteratorNew_EmptyList()
 {
 	dllist_t *list = list_new();
-	assert(list && "Errorallocating memory occurred");
+	assert(list && "Error allocating memory occurred");
 	errno          = 0;
 	dllist_iterator_t *iterator = dllist_iterator_new(list);
 	crashIfFalse(iteratorIsOK(iterator), "dllist_iterator_new empty list: iteratoc is not OK\n");
 
 	list_deleteAll(list);
+	free(iterator);
 }
 
 void testIteratorNew_NullList()
@@ -1209,6 +1074,7 @@ void testIteratorNext_NullCurrentNode()
 	crashIfFalse(errno == 0, "dllist_iterator_next null current node: errno is not null\n");
 
 	free(iterator);
+	list_deleteAll(list);
 }
 
 void testIteratorPrevious()
@@ -1409,16 +1275,6 @@ int main()
 	testListPushBack_NullList();
 	testListPushBack_InvalidList();
 	testPushBack_InvalidMalloc();
-
-//	testPopFront();
-//	testPopFront_EmptyList();
-//	testPopFront_InvalidList();
-//	testPopFront_NullList();
-//
-//	testPopBack();
-//	testPopBack_EmptyList();
-//	testPopBack_InvalidList();
-//	testPopBack_NullList();
 
 	testIteratorNew();
 	testIteratorNew_EmptyList();

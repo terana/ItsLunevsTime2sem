@@ -366,6 +366,7 @@ int list_removeNode(dllist_t *list, node_t *node)
 	if ((node == list->head) && (node == list->tail))
 	{
 		list->head = list->tail = NULL;
+		free(node);
 		return value;
 	}
 
@@ -411,6 +412,7 @@ node_t *list_pushFront(dllist_t *list, data_t value)
 	int res = list_insertBefore(list, node);
 	if (res != 0)
 	{
+		free(node);
 		return NULL;
 	}
 	return node;
@@ -434,27 +436,8 @@ node_t *list_pushBack(dllist_t *list, data_t value)
 	int res = list_insertAfter(list, node);
 	if (res != 0)
 	{
+		free(node);
 		return NULL;
 	}
 	return node;
 }
-
-//data_t list_popFront(dllist_t *list)
-//{
-//	if (!list_isOK(list))
-//	{
-//		errno = EINVAL;
-//		return -1;
-//	}
-//	return list_removeNode(list, list->head);
-//}
-//
-//data_t list_popBack(dllist_t *list)
-//{
-//	if (!list_isOK(list) || list->tail == NULL)
-//	{
-//		errno = EINVAL;
-//		return -1;
-//	}
-//	return list_removeNode(list, list->tail);
-//}

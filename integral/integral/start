@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "building ..."
+clang integral.c -o integral
+
+if  [[ $? != 0 ]] 
+then	
+	exit $?
+fi
+
+echo "executing ..."
+time ./integral 
