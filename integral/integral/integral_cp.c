@@ -19,6 +19,7 @@ typedef struct
 	long        limits;
 	long        numberOfPoints;
 	long double *result;
+	long double trash[1000];
 } thread_argument_t;
 
 void *calculate(void *param)
@@ -36,7 +37,6 @@ void *calculate(void *param)
 		result += FUNC(x);
 	}
 	*(arg->result) = result;
-	free(arg);
 	return NULL;
 }
 
@@ -60,7 +60,8 @@ void parseInputArgs(int argc, char **argv, settings_t *settings, int *needHelp)
 		*needHelp = 1;
 		return;
 	}
-	if (argc == 2){
+	if (argc == 2)
+	{
 		char **endptr = NULL;
 		errno         = 0;
 		settings->numberOfThreads = strtol(argv[1], endptr, 10);
@@ -174,18 +175,17 @@ int main(int argc, char **argv)
 
 	long              numberOfPointsPerThread = settings.numberOfPoints / settings.numberOfThreads;
 	long double       *results                = malloc(settings.numberOfThreads * sizeof(long double));
-	thread_argument_t *arg;
+	thread_argument_t *arg                    = malloc(settings.numberOfThreads * sizeof(thread_argument_t));
 	pthread_t         *threads                = malloc(settings.numberOfThreads * (sizeof(pthread_t)));
 	int               i;
 
 	for (i = 0; i < settings.numberOfThreads; i++)
 	{
-		arg = malloc(sizeof(thread_argument_t));
-		arg->limits         = lim;
-		arg->numberOfPoints = numberOfPointsPerThread;
-		arg->result         = &(results[i]);
+		(arg[i]).limits         = lim;
+		(arg[i]).numberOfPoints = numberOfPointsPerThread;
+		(arg[i]).result         = &(results[i]);
 
-		if (pthread_create(&(threads[i]), NULL, calculate, arg) != 0)
+		if (pthread_create(&(threads[i]), NULL, calculate, arg + i) != 0)
 		{
 			perror("Can't create thread");
 			exit(1);
@@ -203,5 +203,6 @@ int main(int argc, char **argv)
 
 	free(results);
 	free(threads);
+	free(arg);
 	return 0;
 }
