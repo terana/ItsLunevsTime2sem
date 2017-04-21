@@ -10,12 +10,12 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
-
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
 #include <sys/errno.h>
 #include <unistd.h>
+#include "sys_info.h"
 
 #define FUNC(x) (x*x)
 
@@ -31,6 +31,7 @@ typedef struct
 	long        numberOfParts;
 	long double result;
 	pthread_t   thread;
+	char        trash[4000];
 } thread_argument_t;
 
 void *calculate(void *param)
@@ -54,11 +55,18 @@ void *calculate(void *param)
 	return NULL;
 }
 
+void *doNothing(void *param)
+{
+	while (1)
+	{};
+}
+
 typedef struct
 {
 	limits_t lim;
 	long     numberOfThreads;
 	long     numberOfParts;
+	long     totalNumberofThreads;
 } settings_t;
 
 void parseInputArgs(int argc, char **argv, settings_t *settings, int *needHelp)
@@ -73,12 +81,12 @@ void parseInputArgs(int argc, char **argv, settings_t *settings, int *needHelp)
 		char **endptr = NULL;
 		errno         = 0;
 		settings->numberOfThreads = strtol(argv[1], endptr, 10);
-//		if (errno != 0 && )
-//		{
-//			*needHelp = 1;
-//			return;
-//		}
-		*needHelp = 0;
+		if (errno != 0)
+		{
+			*needHelp = 1;
+			return;
+		}
+		*needHelp                 = 0;
 		return;
 	}
 	int i;
@@ -164,7 +172,7 @@ int main(int argc, char **argv)
 	settings.lim.a           = 0;
 	settings.lim.b           = 5;
 	settings.numberOfThreads = 0;
-	settings.numberOfParts   = 2000000000;
+	settings.numberOfParts   = 3000000000;
 
 	int needHelp;
 	parseInputArgs(argc, argv, &settings, &needHelp);
@@ -179,18 +187,38 @@ int main(int argc, char **argv)
 		printf("%s", "number of threads:\n");
 		scanf("%ld", &(settings.numberOfThreads));
 	}
+	printf("numer of threads is set to %ld\n", settings.numberOfThreads);
+
 	long        numbrerOfPartsPerTread = settings.numberOfParts / settings.numberOfThreads;
 	long double stepLimits             = (settings.lim.b - settings.lim.a) / settings.numberOfThreads;
 	long double a                      = settings.lim.a;
 	long double b                      = a + stepLimits;
 
 	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(0, &cpuset);
+	if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0)
+	{
+		perror("Can't set affinity for main thread");
+		exit(1);
+	}
+	long cpu  = 1; // 0 cpu is for main thread
+	long phys = 0;
 
-	long num_cpu = sysconf(_SC_NPROCESSORS_ONLN);
-
-	thread_argument_t *args = malloc(settings.numberOfThreads * sizeof(thread_argument_t));
+	phys_info info;
+	if (getPhysicalProcessorsInfo(&info) != 0)
+	{
+		perror("Can't get sys info");
+		exit(1);
+	}
+	long max_core_id = info.cores_per_phys[0];
+	settings.totalNumberofThreads = (info.cores - 1 > settings.numberOfThreads) ? info.cores - 1 : settings.numberOfThreads;
+	thread_argument_t *args = malloc(settings.totalNumberofThreads * sizeof(thread_argument_t));
 	int               i;
 
+	//printf("Size of thread_arg: %lu\n", sizeof(thread_argument_t));
+	int usingRealThreads = 1;
+	int usingAllthreads  = 0;
 	for (i = 0; i < settings.numberOfThreads; i++)
 	{
 		(args[i]).limits.a      = a;
@@ -205,14 +233,87 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 		CPU_ZERO(&cpuset);
-		CPU_SET(i % num_cpu, &cpuset);
+		CPU_SET(cpu, &cpuset);
 		errno = 0;
 		if (pthread_setaffinity_np(args[i].thread, sizeof(cpu_set_t), &cpuset) != 0)
 		{
 			perror("Can't set affinity");
 			exit(1);
 		}
-		printf("set thread %d to cpu %ld\n", i, i % num_cpu);
+		//printf("set thread %d to cpu %ld\n", i, cpu);
+		cpu++;
+		if (usingAllthreads)
+		{
+			if (cpu >= info.cores*2)
+			{cpu = 0;}
+			continue;
+		}
+		if (usingRealThreads)
+		{
+			if (cpu >= max_core_id)
+			{
+				cpu         = info.cores_per_phys[phys] * 2;
+				phys++;
+				if (phys >= info.phys_cpus)
+				{
+					usingRealThreads = 0;
+					phys             = 0;
+					cpu              = info.cores_per_phys[phys];
+					max_core_id = info.cores_per_phys[phys]*2;
+				}
+				max_core_id = cpu + info.cores_per_phys[phys];
+			}
+			continue;
+		}
+		else
+		{
+			if (cpu >= max_core_id)
+			{
+				phys++;
+				if (phys >= info.phys_cpus)
+				{
+					usingAllthreads = 1;
+					phys            = 0;
+					cpu             = 0;
+				}
+				else
+				{
+					cpu = max_core_id + info.cores_per_phys[phys];
+				}
+				max_core_id = cpu + info.cores_per_phys[phys];
+			}
+		}
+	}
+
+	for (; i < settings.totalNumberofThreads; i++)
+	{
+		if (pthread_create(&(args[i].thread), NULL, doNothing, NULL) != 0)
+		{
+			perror("Can't create thread");
+			exit(1);
+		}
+		CPU_ZERO(&cpuset);
+		CPU_SET(cpu, &cpuset);
+		errno = 0;
+		if (pthread_setaffinity_np(args[i].thread, sizeof(cpu_set_t), &cpuset) != 0)
+		{
+			perror("Can't set affinity");
+			exit(1);
+		}
+		printf("set thread %d to cpu %ld\n", i, cpu);
+		cpu++;
+		if (cpu >= max_core_id)
+		{
+			cpu         = info.cores_per_phys[phys] * 2;
+			phys++;
+			if (phys >= info.phys_cpus)
+			{
+				usingRealThreads = 0;
+				phys             = 0;
+				cpu              = 0;
+			}
+			max_core_id = cpu + info.cores_per_phys[phys];
+		}
 	}
 
 	long double result = 0;
@@ -221,6 +322,10 @@ int main(int argc, char **argv)
 	{
 		pthread_join(args[i].thread, NULL);
 		result += args[i].result;
+	}
+	for (; i < settings.totalNumberofThreads; i++)
+	{
+		pthread_cancel(args[i].thread);
 	}
 	printf("%Lf\n", result);
 

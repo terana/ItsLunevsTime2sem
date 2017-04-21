@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CBB6B38E460F41354613C0C9 /* integral.c in Sources */ = {isa = PBXBuildFile; fileRef = CBB6BDD3377A86DC1EA4C887 /* integral.c */; };
+		CBB6B1A95D2787EAF83174E9 /* sys_info.c in Sources */ = {isa = PBXBuildFile; fileRef = CBB6B786CB2968B7C32BEFD8 /* sys_info.c */; };
+		CBB6B50DAF08F221B60E6F0A /* integral.c in Sources */ = {isa = PBXBuildFile; fileRef = CBB6BF7EAAF31585B7312170 /* integral.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +24,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CBB6B504B116D876E633EB12 /* sys_info.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sys_info.h; sourceTree = "<group>"; };
+		CBB6B786CB2968B7C32BEFD8 /* sys_info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sys_info.c; sourceTree = "<group>"; };
 		CBB6BB704B9C9BB89A7231B0 /* integral */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = integral; sourceTree = BUILT_PRODUCTS_DIR; };
-		CBB6BDD3377A86DC1EA4C887 /* integral.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = integral.c; sourceTree = "<group>"; };
+		CBB6BF7EAAF31585B7312170 /* integral.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = integral.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +52,9 @@
 		CBB6B6989110538AD3A5786C /* integral */ = {
 			isa = PBXGroup;
 			children = (
-				CBB6BDD3377A86DC1EA4C887 /* integral.c */,
+				CBB6BF7EAAF31585B7312170 /* integral.c */,
+				CBB6B786CB2968B7C32BEFD8 /* sys_info.c */,
+				CBB6B504B116D876E633EB12 /* sys_info.h */,
 			);
 			path = integral;
 			sourceTree = "<group>";
@@ -112,7 +117,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CBB6B38E460F41354613C0C9 /* integral.c in Sources */,
+				CBB6B50DAF08F221B60E6F0A /* integral.c in Sources */,
+				CBB6B1A95D2787EAF83174E9 /* sys_info.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
