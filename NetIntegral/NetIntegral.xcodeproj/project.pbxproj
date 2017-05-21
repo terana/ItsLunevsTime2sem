@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CBB6BB09163EC7E05E1C0759 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = CBB6B02008B142A1DD5F789D /* server.c */; };
+		CBB6BB09163EC7E05E1C0759 /* calculator.c in Sources */ = {isa = PBXBuildFile; fileRef = CBB6B02008B142A1DD5F789D /* calculator.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +23,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		CBB6B0008BB333BD4648BD44 /* client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = client.c; sourceTree = "<group>"; };
-		CBB6B02008B142A1DD5F789D /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
+		CBB6B0008BB333BD4648BD44 /* distributor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = distributor.c; sourceTree = "<group>"; };
+		CBB6B02008B142A1DD5F789D /* calculator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = calculator.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,8 +48,8 @@
 		CBB6BF541FB9E5B898F2E83C /* NetIntegral */ = {
 			isa = PBXGroup;
 			children = (
-				CBB6B02008B142A1DD5F789D /* server.c */,
-				CBB6B0008BB333BD4648BD44 /* client.c */,
+				CBB6B02008B142A1DD5F789D /* calculator.c */,
+				CBB6B0008BB333BD4648BD44 /* distributor.c */,
 			);
 			path = NetIntegral;
 			sourceTree = "<group>";
@@ -102,7 +102,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CBB6BB09163EC7E05E1C0759 /* server.c in Sources */,
+				CBB6BB09163EC7E05E1C0759 /* calculator.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
