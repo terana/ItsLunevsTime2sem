@@ -1,6 +1,6 @@
 # You need more of Lunev!
 
-**Problems from MIPT DREC system programming course. 2nd term. **
+**Problems from MIPT DREC system programming course. 2nd term.**
 
 *Here is the salvation from the nightmare of the bravest of the students of DREC MIPT: solutions to the problems by Lunev.*
 
